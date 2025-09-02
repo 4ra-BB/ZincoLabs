@@ -14,7 +14,8 @@ SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.title("🚀 Clasificación de Leads desde Ofertas Laborales")
-
+st.write("Archivo modelo existe:", os.path.exists("modelo_practico_optimizado.pkl")
+         
 # Cargar modelo y classifier con caching para mejorar performance
 @st.cache_resource
 def load_model():
