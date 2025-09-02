@@ -13,6 +13,24 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+@st.cache_resource
+def load_model():
+    try:
+        return joblib.load("modelo_practico_optimizado.pkl")
+    except FileNotFoundError:
+        st.error("❌ Archivo modelo_practico_optimizado.pkl no encontrado.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error al cargar el modelo: {e}")
+        return None
+
+modelo = load_model()
+
+if modelo:
+    st.success("✅ Modelo cargado correctamente")
+else:
+    st.stop()  # Detiene la app si el modelo no está disponible
+
 st.title("🚀 Clasificación de Leads desde Ofertas Laborales")
 st.write("Archivo modelo existe:", os.path.exists("modelo_practico_optimizado.pkl")
          
