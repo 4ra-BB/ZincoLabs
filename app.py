@@ -93,7 +93,15 @@ def detecta_tecnologia(texto: str) -> bool:
 # STREAMLIT APP
 # -----------------------------
 st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
-st.subtitle("Busca las ofertas de trabajo del lead que quieres revisar y completa los datos, pegando el contenido en su idioma original. Yo te ayudaré a predecir si es una empresa que tiende a contratar nuevas tecnologías.")
+st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
+
+st.markdown(
+    "#### Cómo funciona esta herramienta\n"
+    "Pega las ofertas de trabajo del lead que quieres revisar y completa los datos, "
+    "manteniendo el contenido en su idioma original. "
+    "La herramienta analizará cada oferta y te ayudará a predecir si es una empresa "
+    "que tiende a contratar nuevas tecnologías.")
+
 empresa = st.text_input("Nombre de la empresa:")
 
 # Guardamos las ofertas en sesión
