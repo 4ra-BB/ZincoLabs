@@ -77,15 +77,13 @@ TECH_KEYWORDS = [ ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe 
     "Windows Server", "WordPress", "Workday", "Workspace", "Xero", "XML", "Zoom"]  
 
 # -----------------------------
-# FUNCIONES
+# FUNCIONES AUXILIARES
 # -----------------------------
 def parse_days(fecha_str: str) -> int:
-    """Convierte 'hace 7 días' o '7' en int días."""
     m = re.search(r"(\d+)", fecha_str)
     return int(m.group(1)) if m else 0
 
 def detecta_tecnologia(texto: str) -> bool:
-    """Detecta tecnología usando keywords + zero-shot."""
     if any(kw.lower() in texto.lower() for kw in TECH_KEYWORDS):
         return True
     result = classifier(texto, candidate_labels=labels, hypothesis_template=hypothesis_template)
@@ -95,7 +93,7 @@ def detecta_tecnologia(texto: str) -> bool:
 # STREAMLIT APP
 # -----------------------------
 st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
-
+st.subtitle("Busca las ofertas de trabajo del lead que quieres revisar y completa los datos, pegando el contenido en su idioma original. Yo te ayudaré a predecir si es una empresa que tiende a contratar nuevas tecnologías.")
 empresa = st.text_input("Nombre de la empresa:")
 
 # Guardamos las ofertas en sesión
@@ -115,45 +113,37 @@ if st.button("➕ Añadir otra oferta"):
     st.rerun()
 
 # -----------------------------
-# PROCESAR
+# PROCESAR Y PREDECIR
 # -----------------------------
 if st.button("Analizar"):
     if not empresa or not st.session_state.offers:
         st.error("⚠️ Debes ingresar la empresa y al menos una oferta.")
     else:
-        today = datetime.today()
         jobs_7, jobs_30, jobs_180 = 0, 0, 0
         desc_7, desc_30, desc_180 = 0, 0, 0
         title_180 = 0
 
         for oferta in st.session_state.offers:
             dias = parse_days(oferta["dias"])
-            if dias == 0: 
+            if dias == 0:
                 continue
 
-            # Rango temporal
-            if dias <= 7:
-                jobs_7 += 1
-            if dias <= 30:
-                jobs_30 += 1
-            if dias <= 180:
-                jobs_180 += 1
+            # Contar ofertas por rango temporal
+            if dias <= 7: jobs_7 += 1
+            if dias <= 30: jobs_30 += 1
+            if dias <= 180: jobs_180 += 1
 
-            # Título
-            if detecta_tecnologia(oferta["titulo"]):
-                if dias <= 180:
-                    title_180 += 1
+            # Detectar tecnología en título
+            if detecta_tecnologia(oferta["titulo"]) and dias <= 180:
+                title_180 += 1
 
-            # Descripción
+            # Detectar tecnología en descripción
             if detecta_tecnologia(oferta["descripcion"]):
-                if dias <= 7:
-                    desc_7 += 1
-                if dias <= 30:
-                    desc_30 += 1
-                if dias <= 180:
-                    desc_180 += 1
+                if dias <= 7: desc_7 += 1
+                if dias <= 30: desc_30 += 1
+                if dias <= 180: desc_180 += 1
 
-        # Construcción del DF
+        # Construcción del DataFrame de features
         input_data = pd.DataFrame([{
             "jobs_source_description_last_180_days": desc_180,
             "jobs_last_180_days": jobs_180,
@@ -174,7 +164,10 @@ if st.button("Analizar"):
 
             st.subheader("🔮 Predicción")
             st.write(f"Probabilidad: {pred_proba:.2f}")
-            st.success("✅ Parece ser que encontraste un pez gordo! A por él") if pred_label == 1 else st.error("❌ No parece ser lo que buscamos, vamos a intentar con otro. ")
+            if pred_label == 1:
+                st.success("✅ Parece ser que encontraste un pez gordo! A por él")
+            else:
+                st.error("❌ No parece ser lo que buscamos, vamos a intentar con otro.")
         except Exception as e:
             st.error(f"Error en la predicción: {e}")
 
