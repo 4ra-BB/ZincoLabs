@@ -93,7 +93,6 @@ def detecta_tecnologia(texto: str) -> bool:
 # STREAMLIT APP
 # -----------------------------
 st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
-st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
 
 st.markdown(
     "#### Cómo funciona esta herramienta\n"
