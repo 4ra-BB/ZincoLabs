@@ -174,7 +174,7 @@ if st.button("Analizar"):
 
             st.subheader("🔮 Predicción")
             st.write(f"Probabilidad: {pred_proba:.2f}")
-            st.success("✅ Lead") if pred_label == 1 else st.error("❌ No Lead")
+            st.success("✅ Parece ser que encontraste un pez gordo! A por él") if pred_label == 1 else st.error("❌ No parece ser lo que buscamos, vamos a intentar con otro. ")
         except Exception as e:
             st.error(f"Error en la predicción: {e}")
 
