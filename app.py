@@ -2,56 +2,41 @@ import streamlit as st
 import pandas as pd
 import joblib
 import re
+from datetime import datetime
 from transformers import pipeline
-from supabase import create_client
-import os
 
 # -----------------------------
-# CONFIGURACIÓN SUPABASE
-# -----------------------------
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# -----------------------------
-# CARGA MODELO RANDOM FOREST
+# CARGA MODELOS
 # -----------------------------
 @st.cache_resource
-def load_model():
-    try:
-        return joblib.load("modelo_practico_optimizado.pkl")
-    except FileNotFoundError:
-        st.error("❌ Archivo modelo_practico_optimizado.pkl no encontrado.")
-        return None
-    except Exception as e:
-        st.error(f"❌ Error al cargar el modelo: {e}")
-        return None
+def load_pipeline():
+    return joblib.load("modelo_practico_optimizado.pkl")
 
-modelo = load_model()
-if not modelo:
-    st.stop()
-st.success("✅ Modelo cargado correctamente")
+modelo = load_pipeline()
 
-# Mostrar si el archivo existe
-st.write("Archivo modelo existe:", os.path.exists("modelo_practico_optimizado.pkl"))
-
-# -----------------------------
-# CARGA CLASSIFIER ZERO-SHOT
-# -----------------------------
 @st.cache_resource
 def load_classifier():
     return pipeline("zero-shot-classification", model="joeddav/xlm-roberta-large-xnli")
 
 classifier = load_classifier()
 
+# -----------------------------
+# CONFIG
+# -----------------------------
+FEATURES = [
+    "jobs_source_description_last_180_days",
+    "jobs_last_180_days",
+    "jobs_last_30_days",
+    "jobs_source_description_last_30_days",
+    "jobs_source_description_last_7_days",
+    "jobs_last_7_days",
+    "jobs_source_title_last_180_days"
+]
+
 labels = ["menciona herramientas tecnológicas", "no menciona herramientas tecnológicas"]
 hypothesis_template = "Este texto {}."
 
-# -----------------------------
-# LISTA DE TECNOLOGÍAS
-# -----------------------------
-TECH_KEYWORDS = [
-    ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe Illustrator",
+TECH_KEYWORDS = [ ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe Illustrator",
     "Adobe InDesign", "Adobe Photoshop", "Adobe XD", "ADP", "Airflow",
     "Amazon EC2", "Amazon RDS", "Amazon S3", "Amazon Web Services", "Ansible",
     "AOS", "Apache Airflow", "Apache Hadoop", "Apache Maven", "Apache Spark",
@@ -89,93 +74,108 @@ TECH_KEYWORDS = [
     "Spring", "Spring Boot", "sso", "Streamline", "Swift", "Synth", "Tableau",
     "TensorFlow", "Terraform", "Tower", "Trello", "TypeScript", "Unity", "Venda",
     "Visual Studio", "Vue.js", "Webpack", "WhatsApp", "Windows", "Windows 10",
-    "Windows Server", "WordPress", "Workday", "Workspace", "Xero", "XML", "Zoom"
-]
+    "Windows Server", "WordPress", "Workday", "Workspace", "Xero", "XML", "Zoom"]  
 
 # -----------------------------
-# FUNCIONES AUXILIARES
+# FUNCIONES
 # -----------------------------
 def parse_days(fecha_str: str) -> int:
-    """Convierte texto tipo 'hace 7 días' en int días."""
+    """Convierte 'hace 7 días' o '7' en int días."""
     m = re.search(r"(\d+)", fecha_str)
     return int(m.group(1)) if m else 0
 
 def detecta_tecnologia(texto: str) -> bool:
-    """Detecta si un texto menciona tecnología usando zero-shot + keywords."""
+    """Detecta tecnología usando keywords + zero-shot."""
     if any(kw.lower() in texto.lower() for kw in TECH_KEYWORDS):
         return True
     result = classifier(texto, candidate_labels=labels, hypothesis_template=hypothesis_template)
     return result["labels"][0] == "menciona herramientas tecnológicas"
 
-def calcular_flags(dias: int):
-    return dias < 7, dias < 30, dias < 180
+# -----------------------------
+# STREAMLIT APP
+# -----------------------------
+st.title("🔎 Job Offers Lead Scoring")
+
+empresa = st.text_input("Nombre de la empresa:")
+
+# Guardamos las ofertas en sesión
+if "offers" not in st.session_state:
+    st.session_state.offers = [ {"titulo": "", "dias": "", "descripcion": ""} ]
+
+# Render dinámico de ofertas
+for i, oferta in enumerate(st.session_state.offers):
+    st.markdown(f"### Oferta {i+1}")
+    cols = st.columns(3)
+    oferta["titulo"] = cols[0].text_input("Título", value=oferta["titulo"], key=f"titulo_{i}")
+    oferta["dias"] = cols[1].text_input("Hace cuántos días", value=oferta["dias"], key=f"dias_{i}")
+    oferta["descripcion"] = cols[2].text_area("Descripción", value=oferta["descripcion"], key=f"desc_{i}")
+
+if st.button("➕ Añadir otra oferta"):
+    st.session_state.offers.append({"titulo": "", "dias": "", "descripcion": ""})
+    st.rerun()
 
 # -----------------------------
-# INTERFAZ STREAMLIT
+# PROCESAR
 # -----------------------------
-st.title("🚀 Clasificación de Leads desde Ofertas Laborales")
+if st.button("Analizar"):
+    if not empresa or not st.session_state.offers:
+        st.error("⚠️ Debes ingresar la empresa y al menos una oferta.")
+    else:
+        today = datetime.today()
+        jobs_7, jobs_30, jobs_180 = 0, 0, 0
+        desc_7, desc_30, desc_180 = 0, 0, 0
+        title_180 = 0
 
-texto = st.text_area(
-    "Pega aquí las ofertas laborales (bloques separados por doble salto de línea). "
-    "Cada bloque debe tener:\n1ª línea: título\n2ª línea: fecha (ej: 'hace 7 días')\nResto: cuerpo"
-)
+        for oferta in st.session_state.offers:
+            dias = parse_days(oferta["dias"])
+            if dias == 0: 
+                continue
 
-if st.button("Analizar") and texto.strip():
-    ofertas = texto.split("\n\n")
-    resultados = []
+            # Rango temporal
+            if dias <= 7:
+                jobs_7 += 1
+            if dias <= 30:
+                jobs_30 += 1
+            if dias <= 180:
+                jobs_180 += 1
 
-    for oferta in ofertas:
-        partes = oferta.strip().split("\n")
-        if len(partes) < 2:
-            continue
+            # Título
+            if detecta_tecnologia(oferta["titulo"]):
+                if dias <= 180:
+                    title_180 += 1
 
-        titulo = partes[0]
-        fecha_str = partes[1]
-        cuerpo = " ".join(partes[2:]) if len(partes) > 2 else ""
+            # Descripción
+            if detecta_tecnologia(oferta["descripcion"]):
+                if dias <= 7:
+                    desc_7 += 1
+                if dias <= 30:
+                    desc_30 += 1
+                if dias <= 180:
+                    desc_180 += 1
 
-        dias = parse_days(fecha_str)
-        menor7, menor30, menor180 = calcular_flags(dias)
+        # Construcción del DF
+        input_data = pd.DataFrame([{
+            "jobs_source_description_last_180_days": desc_180,
+            "jobs_last_180_days": jobs_180,
+            "jobs_last_30_days": jobs_30,
+            "jobs_source_description_last_30_days": desc_30,
+            "jobs_source_description_last_7_days": desc_7,
+            "jobs_last_7_days": jobs_7,
+            "jobs_source_title_last_180_days": title_180
+        }])
 
-        menciona_cuerpo = detecta_tecnologia(cuerpo)
-        menciona_titulo = detecta_tecnologia(titulo)
+        st.subheader("📊 Features construidas")
+        st.dataframe(input_data)
 
-        # Insertar en Supabase con manejo de errores
+        # Predicción
         try:
-            supabase.table("ofertas").insert({
-                "titulo": titulo,
-                "dias_desde_publicacion": dias,
-                "menciona_tecnologia": menciona_cuerpo,
-                "menciona_tecnologia_titulo": menciona_titulo,
-                "dias_menor_7": menor7,
-                "dias_menor_30": menor30,
-                "dias_menor_180": menor180
-            }).execute()
+            pred_proba = modelo.predict_proba(input_data)[:, 1][0]
+            pred_label = int(pred_proba >= 0.3)
+
+            st.subheader("🔮 Predicción")
+            st.write(f"Probabilidad: {pred_proba:.2f}")
+            st.success("✅ Lead") if pred_label == 1 else st.error("❌ No Lead")
         except Exception as e:
-            st.warning(f"⚠️ No se pudo insertar en Supabase: {e}")
+            st.error(f"Error en la predicción: {e}")
 
-        # Features para modelo RandomForest
-        features = {
-            "jobs_source_description_last_180_days": int(menciona_cuerpo and menor180),
-            "jobs_last_180_days": int(menor180),
-            "jobs_last_30_days": int(menor30),
-            "jobs_source_description_last_30_days": int(menciona_cuerpo and menor30),
-            "jobs_source_description_last_7_days": int(menciona_cuerpo and menor7),
-            "jobs_last_7_days": int(menor7),
-            "jobs_source_title_last_180_days": int(menciona_titulo and menor180)
-        }
-
-        X = pd.DataFrame([features])
-        prob = modelo.predict_proba(X)[0, 1]
-
-        resultados.append([
-            titulo, dias, menciona_cuerpo, menciona_titulo, menor7, menor30, menor180, round(prob, 3)
-        ])
-
-    df = pd.DataFrame(resultados, columns=[
-        "Título", "Días", "Menciona Cuerpo", "Menciona Título",
-        "<7 días", "<30 días", "<180 días", "Probabilidad Cliente"
-    ])
-
-    st.subheader("Resultados")
-    st.dataframe(df)
 
