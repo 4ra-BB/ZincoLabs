@@ -9,8 +9,8 @@ import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
-SUPABASE_URL=os.getenv("https://qhhtmmrqrykcmoxzhqhj.supabase.co")
-SUPABASE_KEY=os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoaHRtbXJxcnlrY21veHpocWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3ODcyNTcsImV4cCI6MjA3MjM2MzI1N30.I7B1QTn_4MbQVyI87wIJgEoJ6CBvCAxHVN4p_R2CKTA")
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.title("🚀 Clasificación de Leads desde Ofertas Laborales")
