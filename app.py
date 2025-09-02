@@ -148,8 +148,3 @@ if st.button("Analizar"):
 
     st.subheader("Resultados")
     st.dataframe(df)
-
-        else:
-            st.error(f"⚠️ Error en la API: {response.status_code}")
-    except Exception as e:
-        st.error(f"❌ No se pudo conectar a la API: {e}")
