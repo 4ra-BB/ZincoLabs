@@ -98,12 +98,11 @@ for i, oferta in enumerate(st.session_state.offers):
     oferta["dias"] = cols[1].text_input("Hace cuántos días", value=oferta["dias"], key=f"dias_{i}")
     oferta["descripcion"] = cols[2].text_area("Descripción", value=oferta["descripcion"], key=f"desc_{i}")
 
+# Botón para añadir otra oferta
 if st.button("➕ Añadir otra oferta"):
     st.session_state.offers.append({"titulo": "", "dias": "", "descripcion": ""})
-    st.rerun()
 
 #Iniciar Supabase para almacenar datos
-
 SUPABASE_URL="https://qhhtmmrqrykcmoxzhqhj.supabase.co"
 SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoaHRtbXJxcnlrY21veHpocWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3ODcyNTcsImV4cCI6MjA3MjM2MzI1N30.I7B1QTn_4MbQVyI87wIJgEoJ6CBvCAxHVN4p_R2CKTA"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
