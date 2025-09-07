@@ -156,9 +156,9 @@ if st.button("Analizar"):
 
             # Guardar en Supabase
             registro = input_data.to_dict(orient="records")[0]
+            registro["empresa"] = empresa
             registro["probabilidad_cliente"] = float(pred_proba)
             registro["es_cliente"] = bool(pred_label)
-
             supabase.table("ofertas").insert(registro).execute()
 
             st.subheader("🔮 Predicción")
