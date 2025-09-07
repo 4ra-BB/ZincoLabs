@@ -104,8 +104,8 @@ if st.button("➕ Añadir otra oferta"):
 
 #Iniciar Supabase para almacenar datos
 
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
+SUPABASE_URL="https://qhhtmmrqrykcmoxzhqhj.supabase.co"
+SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoaHRtbXJxcnlrY21veHpocWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3ODcyNTcsImV4cCI6MjA3MjM2MzI1N30.I7B1QTn_4MbQVyI87wIJgEoJ6CBvCAxHVN4p_R2CKTA"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Procesamiento y predicción
