@@ -3,26 +3,16 @@ import pandas as pd
 import joblib
 import re
 from datetime import datetime
-from transformers import pipeline
 
-# -----------------------------
-# CARGA MODELOS
-# -----------------------------
+# Modelo principal
+
 @st.cache_resource
 def load_pipeline():
     return joblib.load("modelo_practico_optimizado.pkl")
 
 modelo = load_pipeline()
 
-@st.cache_resource
-def load_classifier():
-    return pipeline("zero-shot-classification", model="joeddav/xlm-roberta-large-xnli")
-
-classifier = load_classifier()
-
-# -----------------------------
-# CONFIG
-# -----------------------------
+# Coniguraciones
 FEATURES = [
     "jobs_source_description_last_180_days",
     "jobs_last_180_days",
@@ -30,13 +20,10 @@ FEATURES = [
     "jobs_source_description_last_30_days",
     "jobs_source_description_last_7_days",
     "jobs_last_7_days",
-    "jobs_source_title_last_180_days"
-]
+    "jobs_source_title_last_180_days"]
 
-labels = ["menciona herramientas tecnológicas", "no menciona herramientas tecnológicas"]
-hypothesis_template = "Este texto {}."
-
-TECH_KEYWORDS = [ ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe Illustrator",
+TECH_KEYWORDS = [
+    ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe Illustrator",
     "Adobe InDesign", "Adobe Photoshop", "Adobe XD", "ADP", "Airflow",
     "Amazon EC2", "Amazon RDS", "Amazon S3", "Amazon Web Services", "Ansible",
     "AOS", "Apache Airflow", "Apache Hadoop", "Apache Maven", "Apache Spark",
@@ -76,22 +63,17 @@ TECH_KEYWORDS = [ ".NET", "Ability LMS", "Abstract", "Active Directory", "Adobe 
     "Visual Studio", "Vue.js", "Webpack", "WhatsApp", "Windows", "Windows 10",
     "Windows Server", "WordPress", "Workday", "Workspace", "Xero", "XML", "Zoom"]  
 
-# -----------------------------
-# FUNCIONES AUXILIARES
-# -----------------------------
+# Otras funciones
 def parse_days(fecha_str: str) -> int:
     m = re.search(r"(\d+)", fecha_str)
     return int(m.group(1)) if m else 0
 
 def detecta_tecnologia(texto: str) -> bool:
-    if any(kw.lower() in texto.lower() for kw in TECH_KEYWORDS):
-        return True
-    result = classifier(texto, candidate_labels=labels, hypothesis_template=hypothesis_template)
-    return result["labels"][0] == "menciona herramientas tecnológicas"
+    """Detecta si alguna keyword aparece en el texto (case-insensitive)."""
+    return any(kw.lower() in texto.lower() for kw in TECH_KEYWORDS)
 
-# -----------------------------
-# STREAMLIT APP
-# -----------------------------
+# Esquema Streamlit
+
 st.title("🔎 Scoring de Leads para ZincoLabs a partir de ofertas laborales")
 
 st.markdown(
@@ -103,7 +85,7 @@ st.markdown(
 
 empresa = st.text_input("Nombre de la empresa:")
 
-# Guardamos las ofertas en sesión
+# Guardar ofertas
 if "offers" not in st.session_state:
     st.session_state.offers = [ {"titulo": "", "dias": "", "descripcion": ""} ]
 
@@ -119,9 +101,7 @@ if st.button("➕ Añadir otra oferta"):
     st.session_state.offers.append({"titulo": "", "dias": "", "descripcion": ""})
     st.rerun()
 
-# -----------------------------
-# PROCESAR Y PREDECIR
-# -----------------------------
+# Procesamiento y predicción
 if st.button("Analizar"):
     if not empresa or not st.session_state.offers:
         st.error("⚠️ Debes ingresar la empresa y al menos una oferta.")
@@ -158,8 +138,7 @@ if st.button("Analizar"):
             "jobs_source_description_last_30_days": desc_30,
             "jobs_source_description_last_7_days": desc_7,
             "jobs_last_7_days": jobs_7,
-            "jobs_source_title_last_180_days": title_180
-        }])
+            "jobs_source_title_last_180_days": title_180}])
 
         st.subheader("📊 Features construidas")
         st.dataframe(input_data)
@@ -177,5 +156,3 @@ if st.button("Analizar"):
                 st.error("❌ No parece ser lo que buscamos, vamos a intentar con otro.")
         except Exception as e:
             st.error(f"Error en la predicción: {e}")
-
-
