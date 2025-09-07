@@ -102,6 +102,12 @@ if st.button("➕ Añadir otra oferta"):
     st.session_state.offers.append({"titulo": "", "dias": "", "descripcion": ""})
     st.rerun()
 
+#Iniciar Supabase para almacenar datos
+
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 # Procesamiento y predicción
 if st.button("Analizar"):
     if not empresa or not st.session_state.offers:
@@ -148,6 +154,13 @@ if st.button("Analizar"):
         try:
             pred_proba = modelo.predict_proba(input_data)[:, 1][0]
             pred_label = int(pred_proba >= 0.3)
+
+            # Guardar en Supabase
+            registro = input_data.to_dict(orient="records")[0]
+            registro["probabilidad_cliente"] = float(pred_proba)
+            registro["es_cliente"] = bool(pred_label)
+
+            supabase.table("ofertas").insert(registro).execute()
 
             st.subheader("🔮 Predicción")
             st.write(f"Probabilidad: {pred_proba:.2f}")
