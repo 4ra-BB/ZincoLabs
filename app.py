@@ -112,29 +112,36 @@ if st.button("Analizar"):
     if not empresa or not st.session_state.offers:
         st.error("⚠️ Debes ingresar la empresa y al menos una oferta.")
     else:
+        # Inicialización de contadores
         jobs_7, jobs_30, jobs_180 = 0, 0, 0
         desc_7, desc_30, desc_180 = 0, 0, 0
         title_180 = 0
 
+        # Recorremos todas las ofertas
         for oferta in st.session_state.offers:
             dias = parse_days(oferta["dias"])
             if dias == 0:
                 continue
 
-            # Contar ofertas por rango temporal
-            if dias <= 7: jobs_7 += 1
-            if dias <= 30: jobs_30 += 1
-            if dias <= 180: jobs_180 += 1
+            # Detecta tecnología en descripción y título
+            tiene_descripcion = detecta_tecnologia(oferta["descripcion"])
+            tiene_titulo = detecta_tecnologia(oferta["titulo"])
 
-            # Detectar tecnología en título
-            if detecta_tecnologia(oferta["titulo"]) and dias <= 180:
-                title_180 += 1
-
-            # Detectar tecnología en descripción
-            if detecta_tecnologia(oferta["descripcion"]):
+            # Contadores de tecnología en la descripción
+            if tiene_descripcion:
                 if dias <= 7: desc_7 += 1
                 if dias <= 30: desc_30 += 1
                 if dias <= 180: desc_180 += 1
+
+            # Contador de tecnología en el título
+            if tiene_titulo and dias <= 180:
+                title_180 += 1
+
+            # Totales generales: cualquier parte de la oferta que mencione tecnología
+            if tiene_descripcion or tiene_titulo:
+                if dias <= 7: jobs_7 += 1
+                if dias <= 30: jobs_30 += 1
+                if dias <= 180: jobs_180 += 1
 
         # Construcción del DataFrame de features
         input_data = pd.DataFrame([{
@@ -149,7 +156,7 @@ if st.button("Analizar"):
         st.subheader("📊 Features construidas")
         st.dataframe(input_data)
 
-        # Predicción
+        # Predicción con el modelo
         try:
             pred_proba = modelo.predict_proba(input_data)[:, 1][0]
             pred_label = int(pred_proba >= 0.3)
@@ -159,8 +166,10 @@ if st.button("Analizar"):
             registro["empresa"] = empresa
             registro["probabilidad_cliente"] = float(pred_proba)
             registro["es_cliente"] = bool(pred_label)
+
             supabase.table("ofertas").insert(registro).execute()
 
+            # Mostrar resultados en la app
             st.subheader("🔮 Predicción")
             st.write(f"Probabilidad: {pred_proba:.2f}")
             if pred_label == 1:
