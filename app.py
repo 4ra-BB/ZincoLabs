@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import re
 from datetime import datetime
+from supabase import create_client
 
 # Modelo principal
 
