@@ -16,5 +16,5 @@ Para poder replicar correctamente los archivos disponibles en el repositorio, es
 2. Descargar notebook.ipynb y abrirlo en un programa para ejeutar el código, idealmente Jupyter Notebook o Goolge Collab.
 3. Abrir el código en el apartado 1.2 (Preparación del entorno > Importación de datos), y modificar el camino para ubicar el archivo technographics.cvs.
 4. Ejeutar el código completo.
-5. Abrir la app utilizando el siguiente enlace:
+5. Abrir la app utilizando el siguiente enlace: https://zincolabs-lead2deal.streamlit.app/
 6. Completar los campos con la información requerida, y analizar el resultado.
