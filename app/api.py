@@ -6,7 +6,7 @@ from pyngrok import ngrok
 app = Flask(__name__)
 
 try:
-    pipeline = joblib.load('modelo_practico_optimizado.pkl')
+    pipeline = joblib.load('app/modelo_practico_optimizado.pkl')
     print("✅ Modelo cargado correctamente.")
 except FileNotFoundError:
     print("❌ Error: modelo_practico_optimizado.pkl no encontrado.")
