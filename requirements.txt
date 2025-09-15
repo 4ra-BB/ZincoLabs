@@ -1,8 +1,8 @@
 streamlit==1.28.0
 scikit-learn==1.5.2
-joblib==1.4.2
+joblib==1.6.1
 pandas==2.2.2
-numpy==1.26.4
+numpy==2.0.2
 regex
 supabase==2.4.5
 python-dotenv==1.0.1
