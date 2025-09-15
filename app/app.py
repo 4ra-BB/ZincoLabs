@@ -9,7 +9,7 @@ from supabase import create_client
 
 @st.cache_resource
 def load_pipeline():
-    return joblib.load("modelo_practico_optimizado.pkl")
+    return joblib.load("app/modelo_practico_optimizado.pkl")
 
 modelo = load_pipeline()
 
