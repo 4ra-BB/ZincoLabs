@@ -17,7 +17,7 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; echo '✅ Packages installed and Requirements met'",
   "postAttachCommand": {
     "server": "streamlit run app/app.py --server.enableCORS false --server.enableXsrfProtection false"
   },
@@ -25,8 +25,18 @@
     "8501": {
       "label": "Application",
       "onAutoForward": "openPreview"
+    },
+    "5000": {
+      "label": "API Flask",
+      "onAutoForward": "notify"
     }
   },
+  "forwardPorts": [
+    8501,
+    5000
+  ]
+}
+
   "forwardPorts": [
     8501 , 5000
   ]
